@@ -16,7 +16,7 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        PlaceNeuritees();
+        PlaceNeurites();
     }
 
     // Update is called once per frame
@@ -31,7 +31,7 @@ public class Game : MonoBehaviour
         else { timer += Time.deltaTime; }
     }
 
-    void PlaceNeuritees()
+    void PlaceNeurites()
     {
         for (int y = 0; y < SCREEN_HEIGHT; y++)
         {
