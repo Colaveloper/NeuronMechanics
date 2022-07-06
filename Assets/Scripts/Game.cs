@@ -7,21 +7,22 @@ public class Game : MonoBehaviour
 
     private static int SCREEN_WIDTH = 64; //1024px
     private static int SCREEN_HEIGHT = 48; //768px
+    private float timer = 0;
 
     public float speed = 0.2f;
-    public float timer = 0;
+    public int seedProbability = 1; // over 100
 
-    Neurite[,] grid = new Neurite[SCREEN_WIDTH, SCREEN_HEIGHT];
+    Cell[,] grid = new Cell[SCREEN_WIDTH, SCREEN_HEIGHT];
 
-    // Start is called before the first frame update
     void Start()
     {
-        PlaceNeurites();
-    }
+        Seeding(); // random somas of neurons
+        Invoke("Sprouting", 2); // attaching the axon hillock
+     }
 
-    // Update is called once per frame
     void Update()
     {
+        
         if (timer >= speed)
         {
             timer = 0;
@@ -31,16 +32,57 @@ public class Game : MonoBehaviour
         else { timer += Time.deltaTime; }
     }
 
-    void PlaceNeurites()
+    void Seeding()
     {
         for (int y = 0; y < SCREEN_HEIGHT; y++)
         {
             for (int x = 0; x < SCREEN_WIDTH; x++)
             {
-                Neurite Neurite = Instantiate(Resources.Load("Prefabs/Neurite", typeof(Neurite)), new Vector2(x, y), Quaternion.identity) as Neurite;
-                grid[x, y] = Neurite;
-                grid[x, y].Activate(); 
+                Cell Cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
+                grid[x, y] = Cell;
+
+                if (Random(seedProbability)) 
+                {
+                    grid[x, y].Orientate();
+                    grid[x, y].CreateDentrite();  
+                    grid[x, y].Prepare();
+                }
             }
+        }
+    }
+
+    void Sprouting()
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                if (CorrectDirection(x, y)) 
+                {
+                    grid[x, y].CreateAxon();  
+                    grid[x, y].Prepare();
+                }
+            }
+        }
+    }
+
+    bool CorrectDirection(int x, int y)
+    {
+        if (
+            ((y + 1 < SCREEN_HEIGHT) && ((int) grid[x, y+1].part == 1) && ((int) grid[x, y+1].orientation == 1)) //Up
+            ||
+            ((y - 1 >= 0) && ((int) grid[x, y-1].part == 1) && ((int) grid[x, y - 1].orientation == 0))  //Down
+            ||
+            ((x + 1 < SCREEN_WIDTH) && ((int) grid[x+1, y].part == 1) && ((int) grid[x+1, y].orientation == 3)) //Right
+            ||
+            ((x - 1 >= 0) 
+            && ((int) grid[x-1, y].part == 1) 
+            && ((int) grid[x-1, y].orientation == 2)) //Left
+            )
+        {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -123,15 +165,20 @@ public class Game : MonoBehaviour
                 switch((int) grid[x, y].state) 
                 {
                 case 0:
-                    if (grid[x, y].numNeighbours >0) {
-                        grid[x, y].Activate();
-                    }
+                    if ( 
+                        grid[x, y].numNeighbours > 0 
+                        && 
+                        (int) grid[x, y].part != 0 //: it's a neurite
+                         )
+                        {
+                            grid[x, y].Activate();
+                        }
                     break;
                 case 1:
                     grid[x, y].Exhaust();
                     break;
                 case 2:
-                    grid[x, y].Restore();
+                    grid[x, y].Prepare();
                     break;
                 }
 
@@ -140,9 +187,9 @@ public class Game : MonoBehaviour
         }
     }
 
-    bool RandomAliveCell()
+    bool Random(int percentage)
     {
         int rand = UnityEngine.Random.Range(0, 100);
-        return rand >= 75;
+        return rand < percentage;
     }
 }
