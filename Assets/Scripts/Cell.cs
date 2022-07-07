@@ -24,7 +24,12 @@ public class Cell : MonoBehaviour
     public States state = States.ready;
     public Parts part = Parts.none;
     public Orientations orientation = Orientations.up;
+    public int numActiveNeighbours = 0;
+    public int numCloseActiveNeighbours = 0;
     public int numNeighbours = 0;
+    public int numCloseNeighbours = 0;
+    public int numDentriteNeighbours = 0;
+    public int numAxonNeighbours = 0;
     public Sprite ready;
     public Sprite active;
     public Sprite exhausted;
