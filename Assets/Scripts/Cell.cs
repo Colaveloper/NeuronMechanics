@@ -34,6 +34,8 @@ public class Cell : MonoBehaviour
     public Sprite active;
     public Sprite exhausted;
 
+    //
+
     public void CreateAxon()
     {
         part = Parts.axon;
