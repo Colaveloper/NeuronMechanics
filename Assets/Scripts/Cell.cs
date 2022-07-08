@@ -30,6 +30,7 @@ public class Cell : MonoBehaviour
     public int numCloseNeighbours = 0;
     public int numDentriteNeighbours = 0;
     public int numAxonNeighbours = 0;
+    public int numActiveDentriteNeighbours = 0; 
     public Sprite ready;
     public Sprite active;
     public Sprite exhausted;
@@ -76,7 +77,7 @@ public class Cell : MonoBehaviour
 
     //
 
-    public void Orientate()
+    public void OrientateSeed()
     {
         int rand = UnityEngine.Random.Range(0, 4);
         orientation = (Orientations)rand;

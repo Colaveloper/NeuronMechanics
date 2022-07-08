@@ -6,14 +6,16 @@ using UnityEngine;
 public class Game : MonoBehaviour
 {
 
-    private static int SCREEN_WIDTH = 64; //1024px
-    private static int SCREEN_HEIGHT = 48; //768px
+    private static int SCREEN_WIDTH = 128; //64
+    private static int SCREEN_HEIGHT = 96; //48
     private float timer = 0;
     public float speed = 0.2f;
     public float seedProbability = 0.01f; // over 100
     public bool stopGrowth = false;
-    public int axonStraightness = 75; // over 100
-    public int dentriteStraightness = 75; // over 100
+    public float axonStraightness = 100; // over 100
+    public float dentriteStraightness = 5; // over 100
+    public float selfExcitability = 0.001f; // over 100
+
 
     Cell[,] grid = new Cell[SCREEN_WIDTH, SCREEN_HEIGHT];
 
@@ -31,12 +33,14 @@ public class Game : MonoBehaviour
             if (SignalToTransmit()) 
             {
                 SignalTransmission(); // propagating a wave of activations
-                Debug.Log("signal transmission happening!");
             }
             if (!stopGrowth)  
             {
                 Growing(); // extending dentrites and soma, creating sinapses
+                AxonStraightnessDecay();
             }
+            RandomSelfActivation();
+
         }
         else { timer += Time.deltaTime; }
     }
@@ -52,8 +56,8 @@ public class Game : MonoBehaviour
 
                 if (Random(seedProbability)) 
                 {
-                    grid[x, y].Orientate();
                     grid[x, y].CreateDentrite();  
+                    grid[x, y].OrientateSeed();
                     grid[x, y].Prepare();
                 }
             }
@@ -77,14 +81,15 @@ public class Game : MonoBehaviour
 
     void Growing()
     {
-        //counting both numNeighbours and numCloseNeighbours
 
         for (int y = 0; y < SCREEN_HEIGHT; y++)
         {
             for (int x = 0; x < SCREEN_WIDTH; x++)
             {
-                CountNeuronNeighbours(x, y, false); // awful for performance
-                CountNeuronNeighbours(x, y, true); //  ?
+                //counting both numNeighbours and numCloseNeighbours
+                CountNeuronNeighbours(x, y, false);
+                CountNeuronNeighbours(x, y, true); 
+
                 if ((int) grid[x, y].part == 0)
                 {
                     if (grid[x, y].numCloseNeighbours == 1)
@@ -102,8 +107,9 @@ public class Game : MonoBehaviour
                                 grid[x, y].CreateAxon();  
                                 grid[x, y].Prepare();
                             }
-                        } else {
+                        } else 
                         // creating a new part of a DENTRITE
+                        {
                             if (grid[x, y].numNeighbours == 1 && Random (dentriteStraightness))
                             {
                                 grid[x, y].CreateDentrite();  
@@ -115,6 +121,69 @@ public class Game : MonoBehaviour
                                 grid[x, y].Prepare();
                             }
                         }
+                    } else if (grid[x, y].numCloseNeighbours == 2 && grid[x, y].numNeighbours == 2)
+                    {
+                        if (grid[x, y].numAxonNeighbours == grid[x, y].numDentriteNeighbours)
+                        // creating a new SYNAPSE 
+                        {
+                            grid[x, y].CreateSynapse();  
+                            grid[x, y].Prepare();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void AxonStraightnessDecay()
+    {
+        axonStraightness = axonStraightness*0.9f;
+    }
+
+    void SignalTransmission()
+    {
+        CountActiveNeighbours(false); // only close neighbours
+        CountActiveDentriteNeighbours(); // for synapses
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                if ((int) grid[x, y].part == 1 || (int) grid[x, y].part == 2) // axon or dentrite
+                {
+                    switch((int) grid[x, y].state) 
+                    {
+                    case 0:
+                        if (grid[x, y].numCloseActiveNeighbours > 0)
+                            {
+                                grid[x, y].Activate();
+                            }
+                        break;
+                    case 1:
+                        grid[x, y].Exhaust();
+                        break;
+                    case 2:
+                        grid[x, y].Prepare();
+                        break;
+                    }
+                }
+                if ((int) grid[x, y].part == 3) // synapse: one-way gate
+                {
+                    switch((int) grid[x, y].state) 
+                    {
+                    case 0:
+                        if (
+                            grid[x, y].numActiveDentriteNeighbours > 0
+                        )
+                            {
+                                grid[x, y].Activate();
+                            }
+                        break;
+                    case 1:
+                        grid[x, y].Exhaust();
+                        break;
+                    case 2:
+                        grid[x, y].Prepare();
+                        break;
                     }
                 }
             }
@@ -190,9 +259,49 @@ public class Game : MonoBehaviour
                     grid[x, y].numCloseActiveNeighbours = numNeighbours;
                 }
             }
-        }
+        }        
     }
 
+    void CountActiveDentriteNeighbours()
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+            {
+                for (int x = 0; x < SCREEN_WIDTH; x++)
+                {
+                    int numActiveDentriteNeighbours = 0;
+                    if (y + 1 < SCREEN_HEIGHT) //Up
+                    {
+                        if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (y - 1 >= 0) //Down
+                    {
+                        if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (x + 1 < SCREEN_WIDTH) //Right
+                    {
+                        if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (x - 1 >= 0) //Left
+                    {
+                        if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
+                }
+            }
+    }
+            
     void CountNeuronNeighbours(int x, int y, bool alsoConsiderVertices)
     {
         int numNeighbours = 0;
@@ -287,34 +396,20 @@ public class Game : MonoBehaviour
         }
     }
 
-    void SignalTransmission()
+    void RandomSelfActivation()
     {
-        CountActiveNeighbours(false); // only colse neighbours
         for (int y = 0; y < SCREEN_HEIGHT; y++)
         {
             for (int x = 0; x < SCREEN_WIDTH; x++)
             {
-                if (grid[x, y].part != 0) // it's part of a neuron
+                if ((int) grid[x, y].part !=0 && Random(selfExcitability))
                 {
-                    switch((int) grid[x, y].state) 
-                    {
-                    case 0:
-                        if (grid[x, y].numCloseActiveNeighbours > 0)
-                            {
-                                grid[x, y].Activate();
-                            }
-                        break;
-                    case 1:
-                        grid[x, y].Exhaust();
-                        break;
-                    case 2:
-                        grid[x, y].Prepare();
-                        break;
-                    }
+                    grid[x, y].Activate();
                 }
             }
-        }
+        }   
     }
+
 
     bool CorrectSproutingDirection(int x, int y)
     {
