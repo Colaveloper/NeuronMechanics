@@ -29,7 +29,7 @@ public class Cell : MonoBehaviour
     public bool canBecomeNeuron = false; 
     public Parts[] neighbourhood = new Parts[]{Parts.none, Parts.none, Parts.none, Parts.none};
     
-    // propagation
+    // signal transmission
     public States state = States.ready;
     public int numActiveNeighbours = 0;
     public int numActiveDentriteNeighbours = 0; 

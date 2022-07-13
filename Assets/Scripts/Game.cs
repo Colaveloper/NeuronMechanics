@@ -28,7 +28,7 @@ public class Game : MonoBehaviour
 
     void Update()
     {
-        if (timer >= speed)
+        if (timer >= 1/speed)
         {
             timer = 0;
             if (SignalToTransmit()) 
@@ -46,6 +46,8 @@ public class Game : MonoBehaviour
         else { timer += Time.deltaTime; }
     }
 
+// GROWTH
+
     void Seeding()
     {   
         for (int y = 0; y < SCREEN_HEIGHT; y++)
@@ -59,7 +61,6 @@ public class Game : MonoBehaviour
                 {
                     grid[x, y].CreateDentrite();  
                     grid[x, y].OrientateSeed();
-                    grid[x, y].Prepare();
                 }
             }
         }
@@ -74,7 +75,6 @@ public class Game : MonoBehaviour
                 if (CorrectSproutingDirection(x, y)) 
                 {
                     grid[x, y].CreateAxon();  
-                    grid[x, y].Prepare();
                 }
             }
         }
@@ -149,10 +149,62 @@ public class Game : MonoBehaviour
         }
     }
 
+    int CountNeighboursOnVertices(int x, int y)
+    {
+        int NeighboursOnVertices = 0;
+        if (x + 1 < SCREEN_WIDTH && y + 1 < SCREEN_HEIGHT) //Up-Left
+        {
+            if ((int) grid[x + 1, y + 1].part != 0)
+            {
+                NeighboursOnVertices++;
+            }
+        }
+        if (x - 1 >= 0 && y + 1 < SCREEN_HEIGHT) //Up-Right
+        {
+            if ((int) grid[x - 1, y + 1].part != 0)
+            {
+                NeighboursOnVertices++;
+            }
+        }
+        if (y - 1 >= 0 && x - 1 >= 0) //Down-Left
+        {
+            if ((int) grid[x - 1, y - 1].part != 0)
+            {
+                NeighboursOnVertices++;
+            }
+        }
+        if (y - 1 >= 0 && x + 1 < SCREEN_WIDTH) //Down-Right
+        {
+            if ((int) grid[x + 1, y - 1].part != 0)
+            {
+                NeighboursOnVertices++;
+            }
+        }   
+        return NeighboursOnVertices;
+    }
+
+    // (also used in GRAPHICS)
+    void ObserveNeighbourhoodParts(int x, int y)
+    {
+        if (y + 1 < SCREEN_HEIGHT) {grid[x, y].neighbourhood[0] = grid[x, y + 1].part;}
+        if (x + 1 < SCREEN_WIDTH) {grid[x, y].neighbourhood[1] = grid[x + 1, y].part;}
+        if (y - 1 >= 0) {grid[x, y].neighbourhood[2] = grid[x, y - 1].part;}
+        if (x - 1 >= 0) {grid[x, y].neighbourhood[3] = grid[x - 1, y].part;}
+    }
+
+    // (also used in SIGNAL TRANSMISSION)
+    bool Random(float percentage)
+    {
+        float rand = UnityEngine.Random.Range(0.0f, 100.0f);
+        return rand < percentage;
+    }
+
     void AxonStraightnessDecay()
     {
-        axonStraightness = axonStraightness*0.9f;
+        axonStraightness = axonStraightness*0.95f;
     }
+
+// SIGNAL TRANSMISSION
 
     void SignalTransmission()
     {
@@ -203,6 +255,121 @@ public class Game : MonoBehaviour
             }
         }
     }
+
+     void CountActiveNeighbours()
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                int numActiveNeighbours = 0;
+                if (y + 1 < SCREEN_HEIGHT) //Up
+                {
+                    if ((int) grid[x, y + 1].state == 1)
+                    {
+                        numActiveNeighbours++;
+                    }
+                }
+                if (y - 1 >= 0) //Down
+                {
+                    if ((int) grid[x, y - 1].state == 1)
+                    {
+                        numActiveNeighbours++;
+                    }
+                }
+                if (x + 1 < SCREEN_WIDTH) //Right
+                {
+                    if ((int) grid[x + 1, y].state == 1)
+                    {
+                        numActiveNeighbours++;
+                    }
+                }
+                if (x - 1 >= 0) //Left
+                {
+                    if ((int) grid[x - 1, y].state == 1)
+                    {
+                        numActiveNeighbours++;
+                    }
+                }
+                
+                grid[x, y].numActiveNeighbours = numActiveNeighbours;
+                
+            }
+        }        
+    }
+
+    void CountActiveDentriteNeighbours()
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+            {
+                for (int x = 0; x < SCREEN_WIDTH; x++)
+                {
+                    int numActiveDentriteNeighbours = 0;
+                    if (y + 1 < SCREEN_HEIGHT) //Up
+                    {
+                        if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (y - 1 >= 0) //Down
+                    {
+                        if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (x + 1 < SCREEN_WIDTH) //Right
+                    {
+                        if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    if (x - 1 >= 0) //Left
+                    {
+                        if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
+                        {
+                            numActiveDentriteNeighbours++;
+                        }
+                    }
+                    grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
+                }
+            }
+    }
+
+    bool SignalToTransmit() 
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                if ((int) grid[x, y].state != 0) // there's a signal to be transmitted 
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // (not essential)
+    void RandomSelfActivation()
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                if ((int) grid[x, y].part !=0 && Random(selfExcitability))
+                {
+                    grid[x, y].Activate();
+                }
+            }
+        }   
+    }
+
+// GRAPHICS
 
     void SetSprites() 
     {
@@ -314,144 +481,6 @@ public class Game : MonoBehaviour
         }
     }
 
-    void ObserveNeighbourhoodParts(int x, int y)
-    {
-        if (y + 1 < SCREEN_HEIGHT) {grid[x, y].neighbourhood[0] = grid[x, y + 1].part;}
-        if (x + 1 < SCREEN_WIDTH) {grid[x, y].neighbourhood[1] = grid[x + 1, y].part;}
-        if (y - 1 >= 0) {grid[x, y].neighbourhood[2] = grid[x, y - 1].part;}
-        if (x - 1 >= 0) {grid[x, y].neighbourhood[3] = grid[x - 1, y].part;}
-    }
-
-    void CountActiveNeighbours()
-    {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-        {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                int numNeighbours = 0;
-                if (y + 1 < SCREEN_HEIGHT) //Up
-                {
-                    if ((int) grid[x, y + 1].state == 1)
-                    {
-                        numNeighbours++;
-                    }
-                }
-                if (y - 1 >= 0) //Down
-                {
-                    if ((int) grid[x, y - 1].state == 1)
-                    {
-                        numNeighbours++;
-                    }
-                }
-                if (x + 1 < SCREEN_WIDTH) //Right
-                {
-                    if ((int) grid[x + 1, y].state == 1)
-                    {
-                        numNeighbours++;
-                    }
-                }
-                if (x - 1 >= 0) //Left
-                {
-                    if ((int) grid[x - 1, y].state == 1)
-                    {
-                        numNeighbours++;
-                    }
-                }
-                
-                grid[x, y].numActiveNeighbours = numNeighbours;
-                
-            }
-        }        
-    }
-
-    void CountActiveDentriteNeighbours()
-    {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-            {
-                for (int x = 0; x < SCREEN_WIDTH; x++)
-                {
-                    int numActiveDentriteNeighbours = 0;
-                    if (y + 1 < SCREEN_HEIGHT) //Up
-                    {
-                        if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (y - 1 >= 0) //Down
-                    {
-                        if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (x + 1 < SCREEN_WIDTH) //Right
-                    {
-                        if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (x - 1 >= 0) //Left
-                    {
-                        if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
-                }
-            }
-    }
-            
-    int CountNeighboursOnVertices(int x, int y)
-    {
-        int NeighboursOnVertices = 0;
-        if (x + 1 < SCREEN_WIDTH && y + 1 < SCREEN_HEIGHT) //Up-Left
-        {
-            if ((int) grid[x + 1, y + 1].part != 0)
-            {
-                NeighboursOnVertices++;
-            }
-        }
-        if (x - 1 >= 0 && y + 1 < SCREEN_HEIGHT) //Up-Right
-        {
-            if ((int) grid[x - 1, y + 1].part != 0)
-            {
-                NeighboursOnVertices++;
-            }
-        }
-        if (y - 1 >= 0 && x - 1 >= 0) //Down-Left
-        {
-            if ((int) grid[x - 1, y - 1].part != 0)
-            {
-                NeighboursOnVertices++;
-            }
-        }
-        if (y - 1 >= 0 && x + 1 < SCREEN_WIDTH) //Down-Right
-        {
-            if ((int) grid[x + 1, y - 1].part != 0)
-            {
-                NeighboursOnVertices++;
-            }
-        }   
-        return NeighboursOnVertices;
-    }
-
-    void RandomSelfActivation()
-    {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-        {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                if ((int) grid[x, y].part !=0 && Random(selfExcitability))
-                {
-                    grid[x, y].Activate();
-                }
-            }
-        }   
-    }
-
     bool CorrectSproutingDirection(int x, int y)
     {
         if (
@@ -468,27 +497,5 @@ public class Game : MonoBehaviour
         } else {
             return false;
         }
-    }
-
-    bool SignalToTransmit() 
-    {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-        {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                if ((int) grid[x, y].state != 0) // there's a signal to be transmitted 
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    bool Random(float percentage)
-    {
-        float rand = UnityEngine.Random.Range(0.0f, 100.0f);
-        return rand < percentage;
     }
 }
