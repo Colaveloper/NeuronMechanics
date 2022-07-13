@@ -22,8 +22,10 @@ public class Game : MonoBehaviour
 
     void Start()
     {
-        Seeding(); // random somas of neurons
-        Sprouting(); // attaching the axon hillock
+        // random somas of neurons
+        RepeatForEachCell((x, y) => {Seeding(x, y);});
+        // attaching the axon hillock
+        RepeatForEachCell((x, y) => {Sprouting(x, y);});
     }
 
     void Update()
@@ -31,52 +33,50 @@ public class Game : MonoBehaviour
         if (timer >= 1/speed)
         {
             timer = 0;
-            if (SignalToTransmit()) 
-            {
-                SignalTransmission(); // propagating a wave of activations
-            }
+
             if (!stopGrowth)  
             {
-                Growing(); // extending dentrites and soma, creating sinapses
+                // extending dentrites and soma, 
+                // creating sinapses
+                Growing(); 
+                // over time axon branch out more 
                 AxonStraightnessDecay();
             }
-            SetSprites();
-            RandomSelfActivation();
+
+            if (AnyActivity()) 
+            {
+                // propagating a wave of activations
+                RepeatForEachCell((x, y) => {SignalTransmission(x, y);});
+            }
+
+            // Updating the sprites 
+            RepeatForEachCell((x, y) => {SetSprite(x, y);});
+            
+            // Stimulating the brain automatically
+            RepeatForEachCell((x, y) => {RandomSelfActivation(x, y);});
         }
         else { timer += Time.deltaTime; }
     }
 
 // GROWTH
 
-    void Seeding()
+    void Seeding(int x, int y)
     {   
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
-        {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                Cell Cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
-                grid[x, y] = Cell;
+        Cell Cell = Instantiate(Resources.Load("Prefabs/Cell", typeof(Cell)), new Vector2(x, y), Quaternion.identity) as Cell;
+        grid[x, y] = Cell;
 
-                if (Random(seedProbability)) 
-                {
-                    grid[x, y].CreateDentrite();  
-                    grid[x, y].OrientateSeed();
-                }
-            }
+        if (Random(seedProbability)) 
+        {
+            grid[x, y].CreateDentrite();  
+            grid[x, y].OrientateSeed();
         }
     }
 
-    void Sprouting()
+    void Sprouting(int x, int y)
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        if (CorrectSproutingDirection(x, y)) 
         {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                if (CorrectSproutingDirection(x, y)) 
-                {
-                    grid[x, y].CreateAxon();  
-                }
-            }
+            grid[x, y].CreateAxon();  
         }
     }
 
@@ -199,6 +199,7 @@ public class Game : MonoBehaviour
         return rand < percentage;
     }
 
+    // (not essential)
     void AxonStraightnessDecay()
     {
         axonStraightness = axonStraightness*0.95f;
@@ -206,139 +207,130 @@ public class Game : MonoBehaviour
 
 // SIGNAL TRANSMISSION
 
-    void SignalTransmission()
+    void SignalTransmission(int x, int y)
     {
-        CountActiveNeighbours(); // only close neighbours
-        CountActiveDentriteNeighbours(); // for synapses
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        // axon or dentrite
+        if ((int) grid[x, y].part == 1 || (int) grid[x, y].part == 2) // axon or dentrite
         {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
+            switch((int) grid[x, y].state) 
             {
-                if ((int) grid[x, y].part == 1 || (int) grid[x, y].part == 2) // axon or dentrite
-                {
-                    switch((int) grid[x, y].state) 
+            case 0:
+                CountActiveNeighbours(x, y);
+                if (grid[x, y].numActiveNeighbours > 0)
                     {
-                    case 0:
-                        if (grid[x, y].numActiveNeighbours > 0)
-                            {
-                                grid[x, y].Activate();
-                            }
-                        break;
-                    case 1:
-                        grid[x, y].Exhaust();
-                        break;
-                    case 2:
-                        grid[x, y].Prepare();
-                        break;
+                        grid[x, y].Activate();
                     }
-                }
-                if ((int) grid[x, y].part == 3) // synapse: one-way gate
-                {
-                    switch((int) grid[x, y].state) 
+                break;
+            case 1:
+                grid[x, y].Exhaust();
+                break;
+            case 2:
+                grid[x, y].Prepare();
+                break;
+            }
+        }
+
+        // synapse: one-way gate
+        if ((int) grid[x, y].part == 3) 
+        {
+            switch((int) grid[x, y].state) 
+            {
+            case 0:
+                CountActiveDentriteNeighbours(x, y);
+                if (grid[x, y].numActiveDentriteNeighbours > 0)
                     {
-                    case 0:
-                        if (
-                            grid[x, y].numActiveDentriteNeighbours > 0
-                        )
-                            {
-                                grid[x, y].Activate();
-                            }
-                        break;
-                    case 1:
-                        grid[x, y].Exhaust();
-                        break;
-                    case 2:
-                        grid[x, y].Prepare();
-                        break;
+                        grid[x, y].Activate();
                     }
-                }
+                break;
+            case 1:
+                grid[x, y].Exhaust();
+                break;
+            case 2:
+                grid[x, y].Prepare();
+                break;
             }
         }
     }
 
-     void CountActiveNeighbours()
+     void CountActiveNeighbours(int x, int y)
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        int numActiveNeighbours = 0;
+
+        if ((int) grid[x, y + 1].part == 1 || (int) grid[x, y + 1].part == 2)
         {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
+            if (y + 1 < SCREEN_HEIGHT) //Up
             {
-                int numActiveNeighbours = 0;
-                if (y + 1 < SCREEN_HEIGHT) //Up
+                if ((int) grid[x, y + 1].state == 1)
                 {
-                    if ((int) grid[x, y + 1].state == 1)
-                    {
-                        numActiveNeighbours++;
-                    }
+                    numActiveNeighbours++;
                 }
-                if (y - 1 >= 0) //Down
-                {
-                    if ((int) grid[x, y - 1].state == 1)
-                    {
-                        numActiveNeighbours++;
-                    }
-                }
-                if (x + 1 < SCREEN_WIDTH) //Right
-                {
-                    if ((int) grid[x + 1, y].state == 1)
-                    {
-                        numActiveNeighbours++;
-                    }
-                }
-                if (x - 1 >= 0) //Left
-                {
-                    if ((int) grid[x - 1, y].state == 1)
-                    {
-                        numActiveNeighbours++;
-                    }
-                }
-                
-                grid[x, y].numActiveNeighbours = numActiveNeighbours;
-                
             }
-        }        
+
+            if (y - 1 >= 0) //Down
+            {
+                if ((int) grid[x, y - 1].state == 1)
+                {
+                    numActiveNeighbours++;
+                }
+            }
+
+            if (x + 1 < SCREEN_WIDTH) //Right
+            {
+                if ((int) grid[x + 1, y].state == 1)
+                {
+                    numActiveNeighbours++;
+                }
+            }
+            
+            if (x - 1 >= 0) //Left
+            {
+                if ((int) grid[x - 1, y].state == 1)
+                {
+                    numActiveNeighbours++;
+                }
+            }
+        }
+
+        grid[x, y].numActiveNeighbours = numActiveNeighbours;    
     }
 
-    void CountActiveDentriteNeighbours()
+    void CountActiveDentriteNeighbours(int x, int y)
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        int numActiveDentriteNeighbours = 0;
+
+        if (y + 1 < SCREEN_HEIGHT) //Up
+        {
+            if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
             {
-                for (int x = 0; x < SCREEN_WIDTH; x++)
-                {
-                    int numActiveDentriteNeighbours = 0;
-                    if (y + 1 < SCREEN_HEIGHT) //Up
-                    {
-                        if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (y - 1 >= 0) //Down
-                    {
-                        if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (x + 1 < SCREEN_WIDTH) //Right
-                    {
-                        if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    if (x - 1 >= 0) //Left
-                    {
-                        if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
-                        {
-                            numActiveDentriteNeighbours++;
-                        }
-                    }
-                    grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
-                }
+                numActiveDentriteNeighbours++;
             }
+        }
+        if (y - 1 >= 0) //Down
+        {
+            if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
+            {
+                numActiveDentriteNeighbours++;
+            }
+        }
+        if (x + 1 < SCREEN_WIDTH) //Right
+        {
+            if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
+            {
+                numActiveDentriteNeighbours++;
+            }
+        }
+        if (x - 1 >= 0) //Left
+        {
+            if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
+            {
+                numActiveDentriteNeighbours++;
+            }
+        }
+        
+        grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
     }
 
-    bool SignalToTransmit() 
+    bool AnyActivity() 
     {
         for (int y = 0; y < SCREEN_HEIGHT; y++)
         {
@@ -355,129 +347,117 @@ public class Game : MonoBehaviour
     }
 
     // (not essential)
-    void RandomSelfActivation()
+    void RandomSelfActivation(int x, int y)
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        if ((int) grid[x, y].part !=0 && Random(selfExcitability))
         {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
-            {
-                if ((int) grid[x, y].part !=0 && Random(selfExcitability))
-                {
-                    grid[x, y].Activate();
-                }
-            }
-        }   
+            grid[x, y].Activate();
+        }
     }
 
 // GRAPHICS
 
-    void SetSprites() 
+    void SetSprite(int x, int y) 
     {
-        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        if ((int) grid[x, y].part != 0) //TODO should set sprite only if sprite is to change
         {
-            for (int x = 0; x < SCREEN_WIDTH; x++)
+            int spriteID = 0;
+            int spriteRotation = 0;
+            int spriteState = 0;
+            int numCloseNeighbours = 0;
+            int[] neighbourhood = Array.ConvertAll(grid[x, y].neighbourhood, part => (int) part); 
+            foreach(int n in neighbourhood)
             {
-                if ((int) grid[x, y].part != 0) //TODO should set sprite only if sprite is to change
-                {
-                    int spriteID = 0;
-                    int spriteRotation = 0;
-                    int spriteState = 0;
-                    int numCloseNeighbours = 0;
-                    int[] neighbourhood = Array.ConvertAll(grid[x, y].neighbourhood, part => (int) part); 
-                    foreach(int n in neighbourhood)
-                    {
-                        if (n != 0) {numCloseNeighbours++;}
-                    }
-                    switch(numCloseNeighbours) 
-                        {
-                        case 1:
-                            // termination
-                                spriteID = 0;
-                                if (y + 1 < SCREEN_HEIGHT) //Up
-                                {
-                                    if ((int) grid[x, y + 1].part != 0)
-                                    {
-                                        spriteRotation = 0;
-                                        
-                                    }
-                                } 
-                                if (x + 1 < SCREEN_WIDTH) //Right
-                                {
-                                    if ((int) grid[x + 1, y].part != 0)
-                                    {
-                                        spriteRotation = 270;
-                                    }
-                                } 
-                                if (y - 1 >= 0) //Down
-                                {
-                                    if ((int) grid[x, y - 1].part != 0)
-                                    {
-                                        spriteRotation = 180;
-                                    }
-                                } 
-                                if (x - 1 >= 0) //Left
-                                {
-                                    if ((int) grid[x - 1, y].part != 0)
-                                    {
-                                        spriteRotation = 90;
-                                    }
-                                } 
-                            break;
-                        case 2:
-                            if ((int) grid[x, y].part == 3) {
-                                //synapse
-                                spriteID = 4;
-                            } else {
-                                // curve or straight
-                                spriteID = 1;
-                            }
-                            break;
-                        case 3:
-                            // tshaped
-                            spriteID = 3;
-                            if (y + 1 < SCREEN_HEIGHT) //Up
-                            {
-                                if ((int) grid[x, y + 1].part == 0)
-                                {
-                                    spriteRotation = 0;
-                                    
-                                }
-                            } 
-                             if (x + 1 < SCREEN_WIDTH) //Right
-                            {
-                                if ((int) grid[x + 1, y].part == 0)
-                                {
-                                    spriteRotation = 0;
-                                }
-                            } 
-                            if (y - 1 >= 0) //Down
-                            {
-                                if ((int) grid[x, y - 1].part == 0)
-                                {
-                                    spriteRotation = 0;
-                                }
-                            } 
-                            if (x - 1 >= 0) //Left
-                            {
-                                if ((int) grid[x - 1, y].part == 0)
-                                {
-                                    spriteRotation = 0;
-                                }
-                            }                
-                            break;
-                        }
-                    switch((int) grid[x, y].state) 
-                    {
-                        case 1:
-                            spriteID += 5;
-                            break;
-                        case 2:
-                            spriteID += 10;
-                            break;
-                    }
-                    grid[x, y].SetSprite(spriteID, spriteRotation);
-                }
+                if (n != 0) {numCloseNeighbours++;}
             }
+            switch(numCloseNeighbours) 
+                {
+                case 1:
+                    // termination
+                        spriteID = 0;
+                        if (y + 1 < SCREEN_HEIGHT) //Up
+                        {
+                            if ((int) grid[x, y + 1].part != 0)
+                            {
+                                spriteRotation = 0;
+                                
+                            }
+                        } 
+                        if (x + 1 < SCREEN_WIDTH) //Right
+                        {
+                            if ((int) grid[x + 1, y].part != 0)
+                            {
+                                spriteRotation = 270;
+                            }
+                        } 
+                        if (y - 1 >= 0) //Down
+                        {
+                            if ((int) grid[x, y - 1].part != 0)
+                            {
+                                spriteRotation = 180;
+                            }
+                        } 
+                        if (x - 1 >= 0) //Left
+                        {
+                            if ((int) grid[x - 1, y].part != 0)
+                            {
+                                spriteRotation = 90;
+                            }
+                        } 
+                    break;
+                case 2:
+                    if ((int) grid[x, y].part == 3) {
+                        //synapse
+                        spriteID = 4;
+                    } else {
+                        // curve or straight
+                        spriteID = 1;
+                    }
+                    break;
+                case 3:
+                    // tshaped
+                    spriteID = 3;
+                    if (y + 1 < SCREEN_HEIGHT) //Up
+                    {
+                        if ((int) grid[x, y + 1].part == 0)
+                        {
+                            spriteRotation = 0;
+                            
+                        }
+                    } 
+                        if (x + 1 < SCREEN_WIDTH) //Right
+                    {
+                        if ((int) grid[x + 1, y].part == 0)
+                        {
+                            spriteRotation = 0;
+                        }
+                    } 
+                    if (y - 1 >= 0) //Down
+                    {
+                        if ((int) grid[x, y - 1].part == 0)
+                        {
+                            spriteRotation = 0;
+                        }
+                    } 
+                    if (x - 1 >= 0) //Left
+                    {
+                        if ((int) grid[x - 1, y].part == 0)
+                        {
+                            spriteRotation = 0;
+                        }
+                    }                
+                    break;
+                }
+            switch((int) grid[x, y].state) 
+            {
+                case 1:
+                    spriteID += 5;
+                    break;
+                case 2:
+                    spriteID += 10;
+                    break;
+            }
+            grid[x, y].SetSprite(spriteID, spriteRotation);
         }
     }
 
@@ -496,6 +476,20 @@ public class Game : MonoBehaviour
             return true;
         } else {
             return false;
+        }
+    }
+
+
+// GENERIC
+
+    void RepeatForEachCell(Action<int, int> function)
+    {
+        for (int y = 0; y < SCREEN_HEIGHT; y++)
+        {
+            for (int x = 0; x < SCREEN_WIDTH; x++)
+            {
+                function(x,y);
+            }
         }
     }
 }
