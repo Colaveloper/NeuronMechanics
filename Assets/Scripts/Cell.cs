@@ -18,38 +18,89 @@ public class Cell : MonoBehaviour
 
     public enum Orientations
     {
-        up, down, right, left
+        up, right, down, left
     }
 
-    public States state = States.ready;
+    
     public Parts part = Parts.none;
-    public Orientations orientation = Orientations.up;
-    public int numActiveNeighbours = 0;
-    public int numCloseActiveNeighbours = 0;
-    public int numNeighbours = 0;
-    public int numCloseNeighbours = 0;
-    public int numDentriteNeighbours = 0;
-    public int numAxonNeighbours = 0;
-    public int numActiveDentriteNeighbours = 0; 
-    public Sprite ready;
-    public Sprite active;
-    public Sprite exhausted;
 
-    //
+    // growth
+    public int sumNeighbourhood = 0; // always less then three
+    public bool canBecomeNeuron = false; 
+    public Parts[] neighbourhood = new Parts[]{Parts.none, Parts.none, Parts.none, Parts.none};
+    
+    // propagation
+    public States state = States.ready;
+    public int numActiveNeighbours = 0;
+    public int numActiveDentriteNeighbours = 0; 
+    public Orientations orientation = Orientations.up;
+    
+    // graphics (ready)
+    public Sprite termination;
+    public Sprite straight;
+    public Sprite curve;
+    public Sprite tshaped;
+    public Sprite synapse;
+    // graphics (active)
+    public Sprite terminationActive;
+    public Sprite straightActive;
+    public Sprite curveActive;
+    public Sprite tshapedActive;
+    public Sprite synapseActive;
+    // graphics (exhausted)
+    public Sprite terminationExhausted;
+    public Sprite straightExhausted;
+    public Sprite curveExhausted;
+    public Sprite tshapedExhausted;
+    public Sprite synapseExhausted;
+    // graphics (spritelist)
+    List<Sprite> sprites = new List<Sprite>();
+    // graphics (sprite to use, still not orientated)
+    public Sprite unOrientatedSprite;
+
+    void Start()
+    {
+        sprites.Add(termination);
+        sprites.Add(straight);
+        sprites.Add(curve);
+        sprites.Add(tshaped);
+        sprites.Add(synapse);
+
+        sprites.Add(terminationActive);
+        sprites.Add(straightActive);
+        sprites.Add(curveActive);
+        sprites.Add(tshapedActive);
+        sprites.Add(synapseActive);
+
+        sprites.Add(terminationExhausted);
+        sprites.Add(straightExhausted);
+        sprites.Add(curveExhausted);
+        sprites.Add(tshapedExhausted);
+        sprites.Add(synapseExhausted);
+    }
 
     public void CreateAxon()
     {
         part = Parts.axon;
+        Prepare();
+        // GetComponent<SpriteRenderer>().sprite = straight;
     }
 
     public void CreateDentrite()
     {
         part = Parts.dentrite;
+        Prepare();
+        // GetComponent<SpriteRenderer>().sprite = termination;
     }
 
     public void CreateSynapse()
     {
         part = Parts.synapse;
+        Prepare();
+        // GetComponent<SpriteRenderer>().sprite = synapse;
+        // if (orientation == Orientation.up){
+
+        // }
     }
 
     //
@@ -57,22 +108,19 @@ public class Cell : MonoBehaviour
     public void Activate()
     {
         state = States.active;
-        // GetComponent<SpriteRenderer>().transform.localScale = Vector2.up * 10.0f;
-        GetComponent<SpriteRenderer>().sprite = active;
+        // GetComponent<SpriteRenderer>().sprite = active;
     }
 
     public void Exhaust()
     {
         state = States.exhausted;
-        // GetComponent<SpriteRenderer>().transform.localScale = Vector2.up * .1f;
-        GetComponent<SpriteRenderer>().sprite = exhausted;
+        // GetComponent<SpriteRenderer>().sprite = exhausted;
     }
 
     public void Prepare()
     {
         state = States.ready;
-        // GetComponent<SpriteRenderer>().transform.localScale = 0;
-        GetComponent<SpriteRenderer>().sprite = ready;
+        // GetComponent<SpriteRenderer>().sprite = ready;
     }
 
     //
@@ -81,5 +129,17 @@ public class Cell : MonoBehaviour
     {
         int rand = UnityEngine.Random.Range(0, 4);
         orientation = (Orientations)rand;
+    }
+
+    //
+
+    public void SetSprite(int spriteID, int rotationAngle)
+    {
+        if (unOrientatedSprite != sprites[spriteID])
+        {
+            unOrientatedSprite = sprites[spriteID];
+            GetComponent<SpriteRenderer>().sprite = unOrientatedSprite;
+            transform.Rotate(0, 0, rotationAngle);
+        }
     }
 }
