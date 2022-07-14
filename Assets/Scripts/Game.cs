@@ -45,7 +45,11 @@ public class Game : MonoBehaviour
 
             if (AnyActivity()) 
             {
-                // propagating a wave of activations
+                // preparing axon and dentrite transmission
+                RepeatForEachCell((x, y) => {CountActiveNeighbours(x, y);});
+                // preparing synapse transmission
+                RepeatForEachCell((x, y) => {CountActiveDentriteNeighbours(x, y);});
+                // singnal transmission
                 RepeatForEachCell((x, y) => {SignalTransmission(x, y);});
             }
 
@@ -215,7 +219,6 @@ public class Game : MonoBehaviour
             switch((int) grid[x, y].state) 
             {
             case 0:
-                CountActiveNeighbours(x, y);
                 if (grid[x, y].numActiveNeighbours > 0)
                     {
                         grid[x, y].Activate();
@@ -236,7 +239,6 @@ public class Game : MonoBehaviour
             switch((int) grid[x, y].state) 
             {
             case 0:
-                CountActiveDentriteNeighbours(x, y);
                 if (grid[x, y].numActiveDentriteNeighbours > 0)
                     {
                         grid[x, y].Activate();
@@ -256,7 +258,7 @@ public class Game : MonoBehaviour
     {
         int numActiveNeighbours = 0;
 
-        if ((int) grid[x, y + 1].part == 1 || (int) grid[x, y + 1].part == 2)
+        if ((int) grid[x, y].part == 1 || (int) grid[x, y].part == 2)
         {
             if (y + 1 < SCREEN_HEIGHT) //Up
             {
@@ -298,35 +300,37 @@ public class Game : MonoBehaviour
     {
         int numActiveDentriteNeighbours = 0;
 
-        if (y + 1 < SCREEN_HEIGHT) //Up
+        if ((int) grid[x, y].part == 3)
         {
-            if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
+            if (y + 1 < SCREEN_HEIGHT) //Up
             {
-                numActiveDentriteNeighbours++;
+                if ((int) grid[x, y + 1].state == 1 && (int) grid[x, y + 1].part == 1)
+                {
+                    numActiveDentriteNeighbours++;
+                }
+            }
+            if (y - 1 >= 0) //Down
+            {
+                if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
+                {
+                    numActiveDentriteNeighbours++;
+                }
+            }
+            if (x + 1 < SCREEN_WIDTH) //Right
+            {
+                if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
+                {
+                    numActiveDentriteNeighbours++;
+                }
+            }
+            if (x - 1 >= 0) //Left
+            {
+                if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
+                {
+                    numActiveDentriteNeighbours++;
+                }
             }
         }
-        if (y - 1 >= 0) //Down
-        {
-            if ((int) grid[x, y - 1].state == 1 && (int) grid[x, y - 1].part == 1)
-            {
-                numActiveDentriteNeighbours++;
-            }
-        }
-        if (x + 1 < SCREEN_WIDTH) //Right
-        {
-            if ((int) grid[x + 1, y].state == 1 && (int) grid[x + 1, y].part == 1)
-            {
-                numActiveDentriteNeighbours++;
-            }
-        }
-        if (x - 1 >= 0) //Left
-        {
-            if ((int) grid[x - 1, y].state == 1 && (int) grid[x - 1, y].part == 1)
-            {
-                numActiveDentriteNeighbours++;
-            }
-        }
-        
         grid[x, y].numActiveDentriteNeighbours = numActiveDentriteNeighbours;
     }
 
