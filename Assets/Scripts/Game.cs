@@ -84,6 +84,24 @@ public class Game : MonoBehaviour
         }
     }
 
+    bool CorrectSproutingDirection(int x, int y)
+    {
+        if (
+            ((y + 1 < SCREEN_HEIGHT) && ((int) grid[x, y+1].part == 1) && ((int) grid[x, y+1].orientation == 2)) //Up
+            ||
+            ((y - 1 >= 0) && ((int) grid[x, y-1].part == 1) && ((int) grid[x, y - 1].orientation == 0))  //Down
+            ||
+            ((x + 1 < SCREEN_WIDTH) && ((int) grid[x+1, y].part == 1) && ((int) grid[x+1, y].orientation == 3)) //Right
+            ||
+            ((x - 1 >= 0) && ((int) grid[x-1, y].part == 1) && ((int) grid[x-1, y].orientation == 1)) //Left
+            )
+        {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     void Growing()
     {
         for (int y = 0; y < SCREEN_HEIGHT; y++)
@@ -363,17 +381,19 @@ public class Game : MonoBehaviour
 
     void SetSprite(int x, int y) 
     {
-        if ((int) grid[x, y].part != 0) //TODO should set sprite only if sprite is to change
+        if ((int) grid[x, y].part != 0)
         {
             int spriteID = 0;
             int spriteRotation = 0;
-            int spriteState = 0;
+            
+            ObserveNeighbourhoodParts(x, y);
             int numCloseNeighbours = 0;
             int[] neighbourhood = Array.ConvertAll(grid[x, y].neighbourhood, part => (int) part); 
             foreach(int n in neighbourhood)
             {
                 if (n != 0) {numCloseNeighbours++;}
             }
+
             switch(numCloseNeighbours) 
                 {
                 case 1:
@@ -391,7 +411,7 @@ public class Game : MonoBehaviour
                         {
                             if ((int) grid[x + 1, y].part != 0)
                             {
-                                spriteRotation = 270;
+                                spriteRotation = -90;
                             }
                         } 
                         if (y - 1 >= 0) //Down
@@ -412,10 +432,60 @@ public class Game : MonoBehaviour
                 case 2:
                     if ((int) grid[x, y].part == 3) {
                         //synapse
-                        spriteID = 4;
+                        if (
+                            (neighbourhood[0] != 0 && neighbourhood[2] != 0) ||
+                            (neighbourhood[0] == 0 && neighbourhood[2] == 0)
+                            )
+                        // straight synapse
+                        {
+                            spriteID = 4;
+                            if (neighbourhood[0] == 1)
+                            {
+                                spriteRotation = 0;
+                            } else if (neighbourhood[1] == 1) {
+                                spriteRotation = 90;
+                            } else if (neighbourhood[2] == 1) {
+                                spriteRotation = 180;
+                            } else if (neighbourhood[3] == 1) {
+                                spriteRotation = -90;
+                            }
+                        } else {
+                            spriteID = 4; // TODO change with curved synapse
+                        }
                     } else {
-                        // curve or straight
-                        spriteID = 1;
+                        if (
+                            (neighbourhood[0] != 0 && neighbourhood[2] != 0) ||
+                            (neighbourhood[0] == 0 && neighbourhood[2] == 0)
+                            )
+                        {
+                            // straight
+                            spriteID = 1;
+                            if (neighbourhood[0] != 0)
+                            {
+                                spriteRotation = 0;
+                            } else {
+                                spriteRotation = 90;
+                            }
+                        } else {
+                            //curve
+                            spriteID = 2;
+                            if (neighbourhood[0] != 0)
+                            {
+                                if (neighbourhood[1] != 0)
+                                {
+                                spriteRotation = 0;
+                                } else {
+                                spriteRotation = 90;
+                                }
+                            } else {
+                                if (neighbourhood[1] != 0)
+                                {
+                                spriteRotation = -90;
+                                } else {
+                                spriteRotation = 180;
+                                }
+                            }
+                        }
                     }
                     break;
                 case 3:
@@ -425,7 +495,7 @@ public class Game : MonoBehaviour
                     {
                         if ((int) grid[x, y + 1].part == 0)
                         {
-                            spriteRotation = 0;
+                            spriteRotation = 180;
                             
                         }
                     } 
@@ -433,7 +503,7 @@ public class Game : MonoBehaviour
                     {
                         if ((int) grid[x + 1, y].part == 0)
                         {
-                            spriteRotation = 0;
+                            spriteRotation = 90;
                         }
                     } 
                     if (y - 1 >= 0) //Down
@@ -447,7 +517,7 @@ public class Game : MonoBehaviour
                     {
                         if ((int) grid[x - 1, y].part == 0)
                         {
-                            spriteRotation = 0;
+                            spriteRotation = -90;
                         }
                     }                
                     break;
@@ -455,34 +525,15 @@ public class Game : MonoBehaviour
             switch((int) grid[x, y].state) 
             {
                 case 1:
-                    spriteID += 5;
+                    spriteID += grid[x, y].sprites.Count/3;
                     break;
                 case 2:
-                    spriteID += 10;
+                    spriteID += grid[x, y].sprites.Count/3*2;
                     break;
             }
             grid[x, y].SetSprite(spriteID, spriteRotation);
         }
     }
-
-    bool CorrectSproutingDirection(int x, int y)
-    {
-        if (
-            ((y + 1 < SCREEN_HEIGHT) && ((int) grid[x, y+1].part == 1) && ((int) grid[x, y+1].orientation == 2)) //Up
-            ||
-            ((y - 1 >= 0) && ((int) grid[x, y-1].part == 1) && ((int) grid[x, y - 1].orientation == 0))  //Down
-            ||
-            ((x + 1 < SCREEN_WIDTH) && ((int) grid[x+1, y].part == 1) && ((int) grid[x+1, y].orientation == 3)) //Right
-            ||
-            ((x - 1 >= 0) && ((int) grid[x-1, y].part == 1) && ((int) grid[x-1, y].orientation == 1)) //Left
-            )
-        {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
 
 // GENERIC
 

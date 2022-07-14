@@ -54,9 +54,10 @@ public class Cell : MonoBehaviour
     public Sprite tshapedExhausted;
     public Sprite synapseExhausted;
     // graphics (spritelist)
-    List<Sprite> sprites = new List<Sprite>();
+    public List<Sprite> sprites = new List<Sprite>();
     // graphics (sprite to use, still not orientated)
     public Sprite unOrientatedSprite;
+    public int spriteRotation = 0;
 
     void Start()
     {
@@ -135,11 +136,14 @@ public class Cell : MonoBehaviour
 
     public void SetSprite(int spriteID, int rotationAngle)
     {
-        if (unOrientatedSprite != sprites[spriteID])
+        if (unOrientatedSprite != sprites[spriteID] || spriteRotation != rotationAngle)
         {
+            transform.Rotate(0, 0, -spriteRotation);
+            spriteRotation = rotationAngle;
+            transform.Rotate(0, 0, rotationAngle);
+
             unOrientatedSprite = sprites[spriteID];
             GetComponent<SpriteRenderer>().sprite = unOrientatedSprite;
-            transform.Rotate(0, 0, rotationAngle);
         }
     }
 }
