@@ -95,30 +95,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2d6e7dae1848354d8322b4409aab8e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  state: 0
   part: 0
-  orientation: 0
+  sumNeighbourhood: 0
+  canBecomeNeuron: 0
   neighbourhood: 00000000000000000000000000000000
+  state: 0
   numActiveNeighbours: 0
-  numCloseActiveNeighbours: 0
-  numNeighbours: 0
-  numCloseNeighbours: 0
-  numDentriteNeighbours: 0
-  numAxonNeighbours: 0
   numActiveDentriteNeighbours: 0
+  orientation: 0
   termination: {fileID: 21300000, guid: 607ddb2436d6bb5459ef11207d16869e, type: 3}
   straight: {fileID: 21300000, guid: dc06f4094c6262f4199606019180d724, type: 3}
   curve: {fileID: 21300000, guid: d4bab6ba5531a314f87c3c947c288b68, type: 3}
   tshaped: {fileID: 21300000, guid: 73b0409e88065ab41aa7abec9574225c, type: 3}
   synapse: {fileID: 21300000, guid: b932f76221fa90b418cd861e9e834159, type: 3}
+  synapseCurve: {fileID: 21300000, guid: e386c8ce80500554ba6b3cec2193956f, type: 3}
   terminationActive: {fileID: 21300000, guid: e9aafece15829dd458e5ce87d84e6b41, type: 3}
   straightActive: {fileID: 21300000, guid: 312fcc788bc6af1439ade11101d94e26, type: 3}
   curveActive: {fileID: 21300000, guid: b11a8683fce99cc46a38218e006323d0, type: 3}
   tshapedActive: {fileID: 21300000, guid: e58471b65c429a34e825138298f7a954, type: 3}
   synapseActive: {fileID: 21300000, guid: e464cf9a31d14bb43bf8ba9469e50e80, type: 3}
+  synapseCurveActive: {fileID: 21300000, guid: 372b6081d57c2f845ad9c8e416680492, type: 3}
   terminationExhausted: {fileID: 21300000, guid: d3efbdd5aebce1148a2a409aa15a6f05, type: 3}
   straightExhausted: {fileID: 21300000, guid: c15a9c8a8b2542c45af0ad976e941c6f, type: 3}
   curveExhausted: {fileID: 21300000, guid: 3e0dac0f7713cdc4995bdbd72f9b52ef, type: 3}
   tshapedExhausted: {fileID: 21300000, guid: 8625a958fe1bc9b41aafef29ebb2b817, type: 3}
   synapseExhausted: {fileID: 21300000, guid: 5d51145de83a9c345aaffa8f3d656fb0, type: 3}
-  unOrientedSprite: {fileID: 0}
+  synapseCurveExhausted: {fileID: 21300000, guid: d0a84b19bb32b4946aeb93f637a4c7f6, type: 3}
+  sprites: []
+  unOrientatedSprite: {fileID: 0}
+  spriteRotation: 0

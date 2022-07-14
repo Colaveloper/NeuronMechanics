@@ -450,7 +450,24 @@ public class Game : MonoBehaviour
                                 spriteRotation = -90;
                             }
                         } else {
-                            spriteID = 4; // TODO change with curved synapse
+                            // curved synapse
+                            spriteID = 5;
+                            if (neighbourhood[0] != 0)
+                            {
+                                if (neighbourhood[1] != 0)
+                                {
+                                spriteRotation = 0;
+                                } else {
+                                spriteRotation = 90;
+                                }
+                            } else {
+                                if (neighbourhood[1] != 0)
+                                {
+                                spriteRotation = -90;
+                                } else {
+                                spriteRotation = 180;
+                                }
+                            }
                         }
                     } else {
                         if (

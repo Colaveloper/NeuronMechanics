@@ -41,18 +41,21 @@ public class Cell : MonoBehaviour
     public Sprite curve;
     public Sprite tshaped;
     public Sprite synapse;
+    public Sprite synapseCurve;
     // graphics (active)
     public Sprite terminationActive;
     public Sprite straightActive;
     public Sprite curveActive;
     public Sprite tshapedActive;
     public Sprite synapseActive;
+    public Sprite synapseCurveActive;
     // graphics (exhausted)
     public Sprite terminationExhausted;
     public Sprite straightExhausted;
     public Sprite curveExhausted;
     public Sprite tshapedExhausted;
     public Sprite synapseExhausted;
+    public Sprite synapseCurveExhausted;
     // graphics (spritelist)
     public List<Sprite> sprites = new List<Sprite>();
     // graphics (sprite to use, still not orientated)
@@ -66,18 +69,21 @@ public class Cell : MonoBehaviour
         sprites.Add(curve);
         sprites.Add(tshaped);
         sprites.Add(synapse);
+        sprites.Add(synapseCurve);
 
         sprites.Add(terminationActive);
         sprites.Add(straightActive);
         sprites.Add(curveActive);
         sprites.Add(tshapedActive);
         sprites.Add(synapseActive);
+        sprites.Add(synapseCurveActive);
 
         sprites.Add(terminationExhausted);
         sprites.Add(straightExhausted);
         sprites.Add(curveExhausted);
         sprites.Add(tshapedExhausted);
         sprites.Add(synapseExhausted);
+        sprites.Add(synapseCurveExhausted);
     }
 
     public void CreateAxon()
