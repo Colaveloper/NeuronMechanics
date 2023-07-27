@@ -115,19 +115,16 @@ public class Cell : MonoBehaviour
     public void Activate()
     {
         state = States.active;
-        // GetComponent<SpriteRenderer>().sprite = active;
     }
 
     public void Exhaust()
     {
         state = States.exhausted;
-        // GetComponent<SpriteRenderer>().sprite = exhausted;
     }
 
     public void Prepare()
     {
         state = States.ready;
-        // GetComponent<SpriteRenderer>().sprite = ready;
     }
 
     //
